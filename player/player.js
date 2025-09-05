@@ -1,5 +1,6 @@
 var video = document.getElementById('video');
 var overlayTimer;
+var isFullscreen = false;
 
 function showOverlay(id, text) {
     $(id).text(text).show();
@@ -96,16 +97,58 @@ function resetSpeed() {
 }
 
 function vidFullscreen() {
-    if (video.requestFullscreen) {
-        video.requestFullscreen();
-    } else if (video.mozRequestFullScreen) {
-        video.mozRequestFullScreen();
-    } else if (video.webkitRequestFullscreen) {
-        video.webkitRequestFullscreen();
+    if (!isFullscreen) {
+        if (video.requestFullscreen) {
+            video.requestFullscreen();
+        } else if (video.mozRequestFullScreen) {
+            video.mozRequestFullScreen();
+        } else if (video.webkitRequestFullscreen) {
+            video.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+}
+
+function handleFullscreenChange() {
+    isFullscreen = !!(document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement);
+    
+    if (isFullscreen) {
+        video.controls = false;
+        document.body.style.cursor = 'none';
+        setTimeout(() => {
+            document.body.style.cursor = 'none';
+        }, 3000);
+    } else {
+        video.controls = true;
+        document.body.style.cursor = 'default';
     }
 }
 
 playM3u8(window.location.href.split('#')[1]);
+
+// Fullscreen event listeners
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+// Mouse movement in fullscreen
+document.addEventListener('mousemove', function() {
+    if (isFullscreen) {
+        document.body.style.cursor = 'default';
+        clearTimeout(window.cursorTimer);
+        window.cursorTimer = setTimeout(() => {
+            if (isFullscreen) document.body.style.cursor = 'none';
+        }, 3000);
+    }
+});
+
 $(window).on('load', function () {
     $('#video').on('click', function () {
         this.paused ? this.play() : this.pause();

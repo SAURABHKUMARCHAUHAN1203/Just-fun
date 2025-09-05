@@ -32,7 +32,36 @@
                 border-radius: 10px;
                 font-size: 24px;
                 display: none;
-                z-index: 9999;
+                z-index: 2147483647;
+                pointer-events: none;
+            }
+            
+            /* Fullscreen styles */
+            video::-webkit-media-controls {
+                display: none !important;
+            }
+            
+            video::-webkit-media-controls-enclosure {
+                display: none !important;
+            }
+            
+            #video:fullscreen {
+                object-fit: contain;
+            }
+            
+            #video:-webkit-full-screen {
+                object-fit: contain;
+            }
+            
+            #video:-moz-full-screen {
+                object-fit: contain;
+            }
+            
+            body:fullscreen .control-overlay,
+            body:-webkit-full-screen .control-overlay,
+            body:-moz-full-screen .control-overlay {
+                position: fixed;
+                z-index: 2147483647;
             }
         </style>
         <title>M3U8 Player running...</title>
