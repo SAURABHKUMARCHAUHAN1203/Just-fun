@@ -118,28 +118,24 @@ function vidFullscreen() {
 
 function handleFullscreenChange() {
     isFullscreen = !!(document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement);
+    video.controls = true;
     
     if (isFullscreen) {
-        video.controls = true;
-        showControls();
+        hideControlsAfterDelay();
     } else {
-        video.controls = true;
-        document.body.style.cursor = 'default';
+        clearTimeout(window.hideTimer);
+        video.style.cursor = 'default';
     }
 }
 
-function showControls() {
-    if (isFullscreen) {
-        document.body.style.cursor = 'default';
-        video.style.cursor = 'default';
-        clearTimeout(window.controlsTimer);
-        window.controlsTimer = setTimeout(() => {
-            if (isFullscreen) {
-                document.body.style.cursor = 'none';
-                video.style.cursor = 'none';
-            }
-        }, 3000);
-    }
+function hideControlsAfterDelay() {
+    clearTimeout(window.hideTimer);
+    video.style.cursor = 'default';
+    window.hideTimer = setTimeout(() => {
+        if (isFullscreen) {
+            video.style.cursor = 'none';
+        }
+    }, 3000);
 }
 
 playM3u8(window.location.href.split('#')[1]);
@@ -149,8 +145,12 @@ document.addEventListener('fullscreenchange', handleFullscreenChange);
 document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 
-// Mouse movement in fullscreen
-document.addEventListener('mousemove', showControls);
+// Mouse movement shows cursor in fullscreen
+document.addEventListener('mousemove', () => {
+    if (isFullscreen) hideControlsAfterDelay();
+});
+
+
 
 $(window).on('load', function () {
     $('#video').on('click', function () {
