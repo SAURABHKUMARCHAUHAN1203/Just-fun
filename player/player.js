@@ -120,14 +120,25 @@ function handleFullscreenChange() {
     isFullscreen = !!(document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement);
     
     if (isFullscreen) {
-        video.controls = false;
-        document.body.style.cursor = 'none';
-        setTimeout(() => {
-            document.body.style.cursor = 'none';
-        }, 3000);
+        video.controls = true;
+        showControls();
     } else {
         video.controls = true;
         document.body.style.cursor = 'default';
+    }
+}
+
+function showControls() {
+    if (isFullscreen) {
+        document.body.style.cursor = 'default';
+        video.style.cursor = 'default';
+        clearTimeout(window.controlsTimer);
+        window.controlsTimer = setTimeout(() => {
+            if (isFullscreen) {
+                document.body.style.cursor = 'none';
+                video.style.cursor = 'none';
+            }
+        }, 3000);
     }
 }
 
@@ -139,15 +150,7 @@ document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 
 // Mouse movement in fullscreen
-document.addEventListener('mousemove', function() {
-    if (isFullscreen) {
-        document.body.style.cursor = 'default';
-        clearTimeout(window.cursorTimer);
-        window.cursorTimer = setTimeout(() => {
-            if (isFullscreen) document.body.style.cursor = 'none';
-        }, 3000);
-    }
-});
+document.addEventListener('mousemove', showControls);
 
 $(window).on('load', function () {
     $('#video').on('click', function () {
