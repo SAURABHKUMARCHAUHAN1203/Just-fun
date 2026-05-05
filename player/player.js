@@ -320,18 +320,35 @@ video.addEventListener('loadedmetadata', () => {
 
 function scrub(e) {
     const rect = progressArea.getBoundingClientRect();
-    let x = (e.pageX || (e.touches && e.touches[0] ? e.touches[0].pageX : (e.changedTouches ? e.changedTouches[0].pageX : 0))) - rect.left;
+    let x, total;
+    const pageX = (e.pageX || (e.touches && e.touches[0] ? e.touches[0].pageX : (e.changedTouches ? e.changedTouches[0].pageX : 0)));
+    const pageY = (e.pageY || (e.touches && e.touches[0] ? e.touches[0].pageY : (e.changedTouches ? e.changedTouches[0].pageY : 0)));
+
+    if (currentRotation === 90) {
+        // Bar is vertical on the left, start is at top
+        x = pageY - rect.top;
+        total = rect.height;
+    } else if (currentRotation === 270) {
+        // Bar is vertical on the right, start is at bottom
+        x = rect.bottom - pageY;
+        total = rect.height;
+    } else {
+        // Bar is horizontal at bottom
+        x = pageX - rect.left;
+        total = rect.width;
+    }
+
     if (x < 0) x = 0;
-    if (x > rect.width) x = rect.width;
+    if (x > total) x = total;
     
-    const percent = (x / rect.width);
+    const percent = (x / total);
     progressBar.style.width = (percent * 100) + '%';
     
     const seekTime = percent * video.duration;
     if (!isNaN(video.duration)) {
         currentTimeEl.innerText = formatTime(seekTime);
         seekTooltip.innerText = formatTime(seekTime);
-        seekTooltip.style.left = `${x}px`;
+        seekTooltip.style.left = `${(x / total) * 100}%`;
         seekTooltip.style.display = 'block';
     }
     return percent;
@@ -349,11 +366,25 @@ window.addEventListener('mousemove', (e) => {
         // Just show tooltip on hover
         const rect = progressArea.getBoundingClientRect();
         if (e.pageY >= rect.top - 20 && e.pageY <= rect.bottom + 20 && e.pageX >= rect.left && e.pageX <= rect.right) {
-            const x = e.pageX - rect.left;
-            const percent = x / rect.width;
+            const pageX = e.pageX;
+            const pageY = e.pageY;
+            let x, total;
+            
+            if (currentRotation === 90) {
+                x = pageY - rect.top;
+                total = rect.height;
+            } else if (currentRotation === 270) {
+                x = rect.bottom - pageY;
+                total = rect.height;
+            } else {
+                x = pageX - rect.left;
+                total = rect.width;
+            }
+            
+            const percent = x / total;
             if (!isNaN(video.duration)) {
                 seekTooltip.innerText = formatTime(percent * video.duration);
-                seekTooltip.style.left = `${x}px`;
+                seekTooltip.style.left = `${(x / total) * 100}%`;
                 seekTooltip.style.display = 'block';
             }
         } else {
