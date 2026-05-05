@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Premium M3U8 Player</title>
+        <script
+            src="https://code.jquery.com/jquery-3.6.0.min.js"
+            crossorigin="anonymous"
+        ></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="stylesheet" href="home.css" />
+        <script type="text/javascript" src="main.js"></script>
+    </head>
+    <body>
+        <div class="main-wrapper">
+            <div class="glass-container">
+                <div class="icon-box">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <h1 class="title">M3U8 Player</h1>
+                <p class="subtitle">Enter your stream URL below to start watching</p>
+                
+                <form id="form" class="input-form">
+                    <div class="input-group">
+                        <i class="fas fa-link link-icon"></i>
+                        <input type="text" id="m3u8-placeholder" placeholder="Paste your .m3u8 link here..." required />
+                    </div>
+                    <button type="submit" class="play-btn">
+                        <span>Launch Player</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+                
+                <div class="features">
+                    <div class="feature-item"><i class="fas fa-bolt"></i> 4K Ready</div>
+                    <div class="feature-item"><i class="fas fa-mobile-alt"></i> Mobile Optimized</div>
+                    <div class="feature-item"><i class="fas fa-cog"></i> Quality Selector</div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
