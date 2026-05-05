@@ -419,24 +419,23 @@ playerContainer.addEventListener('click', (e) => {
     if (e.target === video || e.target === playerContainer) togglePlay();
 });
 
-document.addEventListener('fullscreenchange', () => {
-    const isFullscreen = !!document.fullscreenElement;
-    fullscreenBtn.innerHTML = isFullscreen ? '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
-    if (!isFullscreen && !playerContainer.classList.contains('fake-fullscreen')) {
-        playerContainer.classList.remove('rotated');
-    }
-});
-
 // Auto-rotate logic for phone
-window.addEventListener('orientationchange', () => {
+window.addEventListener('resize', () => {
     const isFullscreen = !!(document.fullscreenElement || playerContainer.classList.contains('fake-fullscreen'));
     if (isFullscreen) {
-        if (window.orientation === 90 || window.orientation === -90) {
+        if (window.innerWidth > window.innerHeight) {
+            // Already in landscape, remove CSS rotation
             playerContainer.classList.remove('rotated');
         } else {
+            // Still in portrait, apply CSS rotation
             playerContainer.classList.add('rotated');
         }
     }
+});
+
+// Also trigger on orientation change
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
 });
 
 qualityBtn.addEventListener('click', (e) => {
@@ -451,6 +450,12 @@ Mousetrap.bind('f', (e) => { e.preventDefault(); toggleFullscreen(); });
 Mousetrap.bind('m', (e) => { e.preventDefault(); toggleMute(); });
 Mousetrap.bind('right', (e) => { e.preventDefault(); seek(5); });
 Mousetrap.bind('left', (e) => { e.preventDefault(); seek(-5); });
+
+// Telegram WebApp Initialization
+if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+}
 
 initPlayer();
 toggleControls(true);
