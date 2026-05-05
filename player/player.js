@@ -255,22 +255,19 @@ function applyRotation(degrees) {
         playerContainer.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
         playerContainer.style.width = '100vh';
         playerContainer.style.height = '100vw';
-    } else if (currentRotation === 180) {
-        playerContainer.classList.add('rotated');
-        playerContainer.style.transform = `translate(-50%, -50%) rotate(180deg)`;
-        playerContainer.style.width = '100vw';
-        playerContainer.style.height = '100vh';
+        rotateBtn.style.display = 'flex'; // Show toggle only when rotated
     } else {
         playerContainer.classList.remove('rotated');
         playerContainer.style.transform = '';
         playerContainer.style.width = '';
         playerContainer.style.height = '';
+        rotateBtn.style.display = 'none'; // Hide when portrait/normal
     }
-    showStatus('sync', currentRotation + '°');
 }
 
 function handleManualRotate() {
-    let nextRotation = (currentRotation + 90) % 360;
+    // Toggle between 90 and 270 (180 degree flip)
+    let nextRotation = (currentRotation === 90) ? 270 : 90;
     applyRotation(nextRotation);
 }
 
@@ -437,10 +434,12 @@ playerContainer.addEventListener('click', (e) => {
 // Auto-rotate logic for phone
 window.addEventListener('resize', () => {
     const isFullscreen = !!(document.fullscreenElement || playerContainer.classList.contains('fake-fullscreen'));
-    if (isFullscreen && currentRotation !== 180) { // Don't auto-override if user set 180
+    if (isFullscreen) {
         if (window.innerWidth > window.innerHeight) {
+            // If phone is physically landscape, match it
             applyRotation(0);
-        } else {
+        } else if (currentRotation === 0) {
+            // If phone is portrait and we just entered fullscreen, go to 90
             applyRotation(90);
         }
     }
