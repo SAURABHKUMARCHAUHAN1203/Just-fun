@@ -221,29 +221,85 @@ function changeSpeed() {
     showStatus('bolt', currentSpeed + 'x');
 }
 
-function toggleFullscreen() {
-    const isFullscreen = !!(document.fullscreenElement || playerContainer.classList.contains('fake-fullscreen'));
+function isFullscreenActive() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || playerContainer.classList.contains('fake-fullscreen'));
+}
+
+function isPortraitViewport() {
+    return window.innerHeight > window.innerWidth;
+}
+
+async function requestNativeFullscreen() {
+    if (playerContainer.requestFullscreen) {
+        await playerContainer.requestFullscreen();
+        return true;
+    }
+
+    if (playerContainer.webkitRequestFullscreen) {
+        playerContainer.webkitRequestFullscreen();
+        return true;
+    }
+
+    return false;
+}
+
+async function lockLandscape() {
+    if (!screen.orientation || !screen.orientation.lock) return false;
+
+    try {
+        await screen.orientation.lock('landscape');
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+function unlockOrientation() {
+    if (screen.orientation && screen.orientation.unlock) {
+        try {
+            screen.orientation.unlock();
+        } catch (error) {}
+    }
+}
+
+async function enterFullscreenMode() {
+    try {
+        const nativeFullscreen = await requestNativeFullscreen();
+        if (!nativeFullscreen) enterFakeFullscreen();
+    } catch (error) {
+        enterFakeFullscreen();
+    }
+
+    const locked = await lockLandscape();
+    if (!locked && isPortraitViewport()) {
+        applyRotation(90);
+    } else {
+        applyRotation(0);
+        rotateBtn.style.display = 'flex';
+    }
+
+    toggleControls(true);
+}
+
+async function exitFullscreenMode() {
+    if (document.fullscreenElement) {
+        await document.exitFullscreen().catch(() => {});
+    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    }
+
+    exitFakeFullscreen();
+    applyRotation(0);
+    unlockOrientation();
+}
+
+async function toggleFullscreen() {
+    const isFullscreen = isFullscreenActive();
 
     if (!isFullscreen) {
-        if (playerContainer.requestFullscreen) {
-            playerContainer.requestFullscreen().catch(() => enterFakeFullscreen());
-        } else {
-            enterFakeFullscreen();
-        }
-        
-        // Auto-detect portrait and suggest rotation
-        if (window.innerHeight > window.innerWidth) {
-            applyRotation(90);
-        }
+        await enterFullscreenMode();
     } else {
-        if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
-        }
-        exitFakeFullscreen();
-        applyRotation(0);
-        if (screen.orientation && screen.orientation.unlock) {
-            screen.orientation.unlock().catch(() => {});
-        }
+        await exitFullscreenMode();
     }
 }
 
@@ -255,20 +311,39 @@ function applyRotation(degrees) {
         playerContainer.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
         playerContainer.style.width = '100vh';
         playerContainer.style.height = '100vw';
-        rotateBtn.style.display = 'flex'; // Show toggle only when rotated
+    } else if (currentRotation === 180) {
+        playerContainer.classList.remove('rotated');
+        playerContainer.style.transform = 'rotate(180deg)';
+        playerContainer.style.width = '100vw';
+        playerContainer.style.height = '100vh';
     } else {
         playerContainer.classList.remove('rotated');
         playerContainer.style.transform = '';
         playerContainer.style.width = '';
         playerContainer.style.height = '';
-        rotateBtn.style.display = 'none'; // Hide when portrait/normal
     }
+
+    updateRotateButtonVisibility();
 }
 
 function handleManualRotate() {
-    // Toggle between 90 and 270 (180 degree flip)
-    let nextRotation = (currentRotation === 90) ? 270 : 90;
+    let nextRotation;
+    if (currentRotation === 90) {
+        nextRotation = 270;
+    } else if (currentRotation === 270) {
+        nextRotation = 90;
+    } else if (currentRotation === 180) {
+        nextRotation = 0;
+    } else {
+        nextRotation = isPortraitViewport() ? 90 : 180;
+    }
+
     applyRotation(nextRotation);
+    showStatus('arrows-rotate', currentRotation === 180 ? 'Flipped' : 'Rotated');
+}
+
+function updateRotateButtonVisibility() {
+    rotateBtn.style.display = isFullscreenActive() || currentRotation !== 0 ? 'flex' : 'none';
 }
 
 function enterFakeFullscreen() {
@@ -417,9 +492,7 @@ window.addEventListener('touchmove', (e) => {
 window.addEventListener('touchend', (e) => {
     if (isDragging) {
         isDragging = false;
-        const rect = progressArea.getBoundingClientRect();
-        let x = (e.changedTouches[0].pageX) - rect.left;
-        const percent = Math.max(0, Math.min(1, x / rect.width));
+        const percent = scrub(e);
         if (!isNaN(video.duration)) {
             video.currentTime = percent * video.duration;
         }
@@ -428,7 +501,12 @@ window.addEventListener('touchend', (e) => {
 });
 
 playPauseBtn.addEventListener('click', togglePlay);
-bigPlayBtn.addEventListener('click', togglePlay);
+bigPlayBtn.addEventListener('click', async () => {
+    if (!isFullscreenActive()) {
+        await enterFullscreenMode();
+    }
+    togglePlay();
+});
 rewindBtn.addEventListener('click', () => seek(-10));
 forwardBtn.addEventListener('click', () => seek(10));
 muteBtn.addEventListener('click', toggleMute);
@@ -464,7 +542,7 @@ playerContainer.addEventListener('click', (e) => {
 
 // Auto-rotate logic for phone
 window.addEventListener('resize', () => {
-    const isFullscreen = !!(document.fullscreenElement || playerContainer.classList.contains('fake-fullscreen'));
+    const isFullscreen = isFullscreenActive();
     if (isFullscreen) {
         if (window.innerWidth > window.innerHeight) {
             // If phone is physically landscape, match it
@@ -479,6 +557,20 @@ window.addEventListener('resize', () => {
 // Also trigger on orientation change
 window.addEventListener('orientationchange', () => {
     setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
+});
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && !playerContainer.classList.contains('fake-fullscreen')) {
+        applyRotation(0);
+        unlockOrientation();
+    }
+});
+
+document.addEventListener('webkitfullscreenchange', () => {
+    if (!document.webkitFullscreenElement && !playerContainer.classList.contains('fake-fullscreen')) {
+        applyRotation(0);
+        unlockOrientation();
+    }
 });
 
 qualityBtn.addEventListener('click', (e) => {

@@ -235,13 +235,11 @@
                 to { transform: rotate(360deg); }
             }
 
-            /* Mobile Auto-Rotation Fix for Fullscreen */
+            /* Fullscreen is handled in player.js so Android can use a user-tap orientation lock. */
             @media screen and (max-width: 900px) and (orientation: portrait) {
                 .player-container:fullscreen {
-                    transform: rotate(90deg);
-                    width: 100vh;
-                    height: 100vw;
-                    transform-origin: center;
+                    width: 100vw;
+                    height: 100vh;
                 }
             }
         </style>
