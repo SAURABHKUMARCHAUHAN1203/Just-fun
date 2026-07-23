@@ -373,6 +373,7 @@ function exitFakeFullscreen() {
 video.addEventListener('play', () => {
     updatePlayPauseUI();
     bigPlayBtn.style.display = 'none';
+    toggleControls(true);
 });
 video.addEventListener('pause', updatePlayPauseUI);
 video.addEventListener('waiting', () => loader.style.display = 'block');
