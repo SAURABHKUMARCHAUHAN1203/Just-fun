@@ -1,0 +1,5 @@
+# Proxy IFAS CDN requests to bypass CORS
+# m3u8cdn.ifasonline.com (CloudFront-backed S3)
+/proxy/m3u8cdn/*  https://m3u8cdn.ifasonline.com/:splat  200
+# s3convertedcdn.ifasonline.com (another IFAS CDN)
+/proxy/s3convertedcdn/*  https://s3convertedcdn.ifasonline.com/:splat  200

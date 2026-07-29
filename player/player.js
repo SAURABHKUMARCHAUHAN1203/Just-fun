@@ -26,6 +26,23 @@ let currentSpeed = 1;
 let isDragging = false;
 let currentRotation = 0;
 
+// --- CORS Proxy Helper ---
+// Rewrites IFAS CDN URLs to route through Netlify's built-in proxy,
+// bypassing CORS restrictions on media segments (.m4s, .mp4, .ts)
+function proxyUrl(url) {
+    // Only proxy known IFAS CDN domains
+    const proxyMap = {
+        'https://m3u8cdn.ifasonline.com/': '/proxy/m3u8cdn/',
+        'https://s3convertedcdn.ifasonline.com/': '/proxy/s3convertedcdn/'
+    };
+    for (const [origin, proxyPath] of Object.entries(proxyMap)) {
+        if (url.startsWith(origin)) {
+            return url.replace(origin, proxyPath);
+        }
+    }
+    return url; // Not an IFAS URL, return as-is
+}
+
 // --- Initialization ---
 
 function initPlayer() {
@@ -35,6 +52,15 @@ function initPlayer() {
         return;
     }
     const url = decodeURIComponent(hash);
+    
+    // Direct MP4 files don't need HLS.js — use native <video src> (bypasses CORS)
+    if (url.match(/\.mp4(\?.*)?$/i)) {
+        video.src = url;
+        video.addEventListener('loadedmetadata', attemptPlay);
+        qualityBtn.style.display = 'none';
+        return;
+    }
+    
     playM3u8(url);
 }
 
@@ -43,9 +69,12 @@ function playM3u8(url) {
         hls = new Hls({
             capLevelToPlayerSize: true,
             lowLatencyMode: true,
-            enableWorker: true
+            enableWorker: true,
+            xhrSetup: function(xhr, url) {
+                xhr.open('GET', proxyUrl(url), true);
+            }
         });
-        hls.loadSource(url);
+        hls.loadSource(proxyUrl(url));
         hls.attachMedia(video);
         
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
